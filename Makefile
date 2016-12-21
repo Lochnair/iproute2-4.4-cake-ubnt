@@ -9,7 +9,7 @@ ARPDDIR?=/var/lib/arpd
 KERNEL_INCLUDE?=/usr/include
 
 # Path to db_185.h include
-DBM_INCLUDE:=$(DESTDIR)/usr/include
+DBM_INCLUDE:=$(DESTDIR)/usr/$(DEB_HOST_GNU_TYPE)/include
 
 SHARED_LIBS = y
 
@@ -29,9 +29,11 @@ ADDLIB+=ipx_ntop.o ipx_pton.o
 #options for mpls
 ADDLIB+=mpls_ntop.o mpls_pton.o
 
-CC = gcc
+CC = $(DEB_HOST_GNU_TYPE)-gcc
 HOSTCC = gcc
 DEFINES += -D_GNU_SOURCE
+# Turn on transparent support for LFS
+DEFINES += -D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE
 CCOPTS = -O2
 WFLAGS := -Wall -Wstrict-prototypes  -Wmissing-prototypes
 WFLAGS += -Wmissing-declarations -Wold-style-definition -Wformat=2
@@ -39,7 +41,7 @@ WFLAGS += -Wmissing-declarations -Wold-style-definition -Wformat=2
 CFLAGS := $(WFLAGS) $(CCOPTS) -I../include $(DEFINES) $(CFLAGS)
 YACCFLAGS = -d -t -v
 
-SUBDIRS=lib tc netem genl 
+SUBDIRS=lib ip tc bridge misc netem genl tipc man
 
 LIBNETLINK=../lib/libnetlink.a ../lib/libutil.a
 LDLIBS += $(LIBNETLINK)
@@ -56,14 +58,10 @@ install: all
 	install -m 0755 -d $(DESTDIR)$(SBINDIR)
 	install -m 0755 -d $(DESTDIR)$(CONFDIR)
 	install -m 0755 -d $(DESTDIR)$(ARPDDIR)
-	install -m 0755 -d $(DESTDIR)$(DOCDIR)/examples
-	install -m 0755 -d $(DESTDIR)$(DOCDIR)/examples/diffserv
-	install -m 0644 README.iproute2+tc $(shell find examples -maxdepth 1 -type f) \
-		$(DESTDIR)$(DOCDIR)/examples
-	install -m 0644 $(shell find examples/diffserv -maxdepth 1 -type f) \
-		$(DESTDIR)$(DOCDIR)/examples/diffserv
-	@for i in $(SUBDIRS) doc; do $(MAKE) -C $$i install; done
+	@for i in $(SUBDIRS); do $(MAKE) -C $$i install; done
 	install -m 0644 $(shell find etc/iproute2 -maxdepth 1 -type f) $(DESTDIR)$(CONFDIR)
+	install -m 0755 -d $(DESTDIR)/bin
+	ln -s /sbin/ip $(DESTDIR)/bin/ip
 
 snapshot:
 	echo "static const char SNAPSHOT[] = \""`date +%y%m%d`"\";" \
@@ -79,6 +77,8 @@ clobber:
 	rm -f Config cscope.*
 
 distclean: clobber
+
+check:
 
 cscope:
 	cscope -b -q -R -Iinclude -sip -slib -smisc -snetem -stc
