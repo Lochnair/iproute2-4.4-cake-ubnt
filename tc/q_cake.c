@@ -348,7 +348,7 @@ static int cake_parse_opt(struct qdisc_util *qu, int argc, char **argv,
 		addattr_l(n, 1024, TCA_CAKE_OVERHEAD, &overhead, sizeof(overhead));
 	if (overhead_override) {
 		unsigned zero = 0;
-		addattr_l(n, 1024, TCA_CAKE_ETHERNET, &zero, sizeof(zero));
+		addattr_l(n, 1024, TCA_CAKE_RAW, &zero, sizeof(zero));
 	}
 	if (mpu > 0)
 		addattr_l(n, 1024, TCA_CAKE_MPU, &mpu, sizeof(mpu));
